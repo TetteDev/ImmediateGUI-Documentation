@@ -1,3 +1,5 @@
+The actual library can be found here https://greasyfork.org/en/scripts/535798-immediategui
+
 # ImmediateGUI Documentation
 
 Generated: 2025-10-04
