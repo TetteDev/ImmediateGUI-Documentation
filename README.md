@@ -1,611 +1,1161 @@
-The actual library can be found here https://greasyfork.org/en/scripts/535798-immediategui
+# ImmediateGUI Library Documentation
 
-# ImmediateGUI Documentation
+Download Link: https://greasyfork.org/en/scripts/535798-immediategui
 
-Generated: 2025-10-04
+## Overview
 
-ImmediateGUI is a lightweight, immediate-mode UI helper for building small tool panels in the browser. It renders a floating, draggable panel with themable controls and layout primitives.
+**ImmediateGUI** is a lightweight, feature-rich JavaScript library for creating immediate-mode GUI interfaces in web applications. It provides a simple, chainable API for building customizable user interfaces with minimal setup.
 
-- File: ImmediateGUI.js
-- Class: ImmediateGUI
+### Key Features
+
+- **🎨 Theming System**: Built-in light and dark themes with custom theme support
+- **📦 Immediate Mode Rendering**: Build UIs with a simple, declarative API
+- **🔧 Extensive Control Set**: 20+ UI controls including buttons, inputs, sliders, and more
+- **📑 Advanced Layouts**: Support for sections, rows, tabs, and indentation
+- **🎯 Draggable Interface**: Optional draggable panels with auto-positioning
+- **🔍 Control Registry**: Query and manipulate controls by ID
+- **📱 Responsive Design**: Auto-scrolling with customizable max height
+- **♿ Accessibility**: ARIA attributes and keyboard navigation support
+- **🎭 Modal Dialogs**: Built-in modal and prompt systems
+- **⚡ Performance**: Efficient rendering with CSS variables and minimal DOM operations
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Properties](#properties)
-- [Static Methods](#static-methods)
-- [Constructor](#constructor)
-- [Private/Internal Methods](#privateinternal-methods)
-- [Layout Methods](#layout-methods)
-- [Tab Methods](#tab-methods)
-- [Control Methods](#control-methods)
-- [Panel Lifecycle](#panel-lifecycle)
-- [Modal/Prompt](#modalprompt)
-- [Theming](#theming)
+1. [Getting Started](#getting-started)
+2. [Constructor](#constructor)
+3. [Static Methods](#static-methods)
+4. [Core Methods](#core-methods)
+5. [Layout Methods](#layout-methods)
+6. [Control Methods](#control-methods)
+7. [Theme Methods](#theme-methods)
+8. [Utility Methods](#utility-methods)
+9. [Examples](#examples)
 
 ---
 
-## Overview
+## Getting Started
 
-- Floating, fixed-position container with title bar and content area
-- Dark and light themes using CSS variables
-- Controls rendered directly to DOM
-- Sections, rows, indentation, and tabs for layout
-- Draggable by mouse, keeps itself within viewport
+### Basic Usage
 
----
+```javascript
+// Create a new GUI instance
+const gui = new ImmediateGUI({
+    title: 'My Application',
+    theme: 'dark',
+    position: 'right',
+    width: 300
+});
 
-## Properties
-
-- static OccupiedElementIds: string[]
-  - Tracks generated IDs to avoid collisions.
-
-- theme: object
-  - Active theme object from this.themes.
-
-- themes: object
-  - Built-in theme definitions (light, dark).
-
-- options: object
-  - Runtime options provided to constructor.
-
-- container: HTMLElement
-  - Root panel element.
-
-- contentContainer: HTMLElement
-  - Inner content area for controls.
-
-- currentSection: HTMLElement | null
-  - Target container for controls when inside a section.
-
-- currentRow: HTMLElement | null
-  - Target container for controls when inside a row.
-
-- currentTab: { wrapper, panes, activeTab, currentTabIndex } | null
-  - Current tab context while building tabs.
-
-- indentationLevel: number
-  - Current indentation level (applied as left margin).
-
-- indentationSize: number
-  - Pixels per indentation level.
-
-- isCustomIndentationLevel: boolean
-  - Whether the indentation level was set explicitly.
-
-- maxHeight: string
-  - Max height for the panel.
-
-- titleBar: HTMLElement
-  - Title bar element.
-
-- minimizeBtn: HTMLButtonElement
-  - Minimize toggle button.
-
-- isMinimized: boolean
-  - Current minimized state.
-
-- escapeHTMLPolicy: Trusted Types policy or shim
-  - Used to safely set innerHTML for symbols.
-
----
-
-## Static Methods
-
-### ImmediateGUI.GenerateId(prefix = "gui_")
-Generates a unique element ID and registers it to avoid reuse.
-
-- Parameters:
-  - prefix: string (optional) ID prefix
-- Returns: string
-- Notes: Uses base36 timestamp + random part and falls back to recursion on collision.
+// Add controls
+gui.Label('Welcome to ImmediateGUI!');
+gui.Button('Click Me', () => alert('Clicked!'));
+gui.Textbox('Enter your name', '');
+gui.Show();
+```
 
 ---
 
 ## Constructor
 
-### new ImmediateGUI(options = {})
-Creates a new floating panel with a title bar and content area.
+### `new ImmediateGUI(options)`
 
-- Options:
-  - theme: 'dark' | 'light' (default 'dark')
-  - position: 'right' | 'left' (default 'right')
-  - width: number | string (default 300)
-  - draggable: boolean (default true)
-  - title: string (default 'Immediate GUI')
-  - titleLeftAligned: boolean (default true)
-- Side Effects:
-  - Injects scoped styles
-  - Applies CSS variables
-  - Initializes DOM structure
-  - Enables dragging if configured
+Creates a new ImmediateGUI instance.
+
+**Parameters:**
+- `options` (Object, optional): Configuration object with the following properties:
+  - `theme` (String): Theme name - `'light'` or `'dark'` (default: `'dark'`)
+  - `position` (String): Panel position - `'left'` or `'right'` (default: `'right'`)
+  - `width` (Number|String): Panel width in pixels or CSS value (default: `300`)
+  - `draggable` (Boolean): Enable dragging (default: `true`)
+  - `title` (String): Panel title (default: `'Immediate GUI'`)
+  - `titleLeftAligned` (Boolean): Align title to left (default: `true`)
+
+**Returns:** ImmediateGUI instance
+
+**Example:**
+
+```javascript
+const gui = new ImmediateGUI({
+    title: 'Control Panel',
+    theme: 'dark',
+    position: 'right',
+    width: 350,
+    draggable: true,
+    titleLeftAligned: false
+});
+```
 
 ---
 
-## Private/Internal Methods
+## Static Methods
 
-Note: Methods prefixed with underscore are internal.
+### `ImmediateGUI.GenerateId(prefix)`
 
-### _createTitleBar(leftAlign = true)
-Builds the sticky title bar with a minimize toggle.
+Generates a unique ID for GUI elements.
 
-- Parameters:
-  - leftAlign: boolean
-- Side Effects:
-  - Appends title bar to this.container
-  - Wires minimize button click handler
+**Parameters:**
+- `prefix` (String, optional): ID prefix (default: `'gui_'`)
 
-### _flashTitleBar(duration = 2000, flashCount = 6)
-Temporarily flashes the title bar background to draw attention.
+**Returns:** String - Unique ID
 
-- Parameters:
-  - duration: number (ms)
-  - flashCount: number of on/off flashes (pairs)
-- Returns: this
+**Example:**
 
-### _toggleMinimize(forceState = null)
-Toggles minimized state of the panel.
+```javascript
+const uniqueId = ImmediateGUI.GenerateId('custom_');
+// Returns: 'custom_lz9x8k7p2qm'
+```
 
-- Parameters:
-  - forceState: boolean | null
-- Behavior:
-  - Hides/shows contentContainer
-  - Adjusts container maxHeight, position, overflow
-  - Updates button icon/title
-  - Calls _keepInView()
+---
 
-### _updateCSSVariables()
-Applies current theme values to document root CSS variables.
+## Core Methods
 
-- Returns: void
+### `Show()`
 
-### _applyGlobalStyles()
-Injects a scoped <style> element with base control styles and resets.
+Displays the GUI panel. If already visible, cleans up empty wrappers.
 
-- Returns: void
-- Notes: Scoped to current container id; also styles scrollbars.
+**Parameters:** None
 
-### _setupDragging()
-Enables dragging the panel with the mouse.
+**Returns:** ImmediateGUI instance (chainable)
 
-- Behavior:
-  - Starts on mousedown outside controls
-  - Moves on mousemove
-  - Ends on mouseup/leave
-  - Calls _keepInView() after drag
-- Returns: void
+**Example:**
 
-### _keepInView()
-Repositions the panel to ensure visibility within the viewport.
+```javascript
+gui.Label('Hello World');
+gui.Button('OK', () => console.log('OK'));
+gui.Show();
+```
 
-- Behavior:
-  - Keeps at least 50px visible on each screen edge
-- Returns: void
+---
 
-### _applyIndentation(element)
-Applies current left margin based on indentation level.
+### `Hide()`
 
-- Parameters:
-  - element: HTMLElement
-- Returns: HTMLElement
+Hides the GUI panel without removing it from the DOM.
 
-### _applyThemeToElements()
-Updates in-DOM styles for controls to reflect current theme.
+**Parameters:** None
 
-- Behavior:
-  - Updates container, buttons, inputs, sections, text, toggles
-- Returns: this
+**Returns:** ImmediateGUI instance (chainable)
+
+**Example:**
+
+```javascript
+gui.Hide(); // Panel is hidden but can be shown again
+```
+
+---
+
+### `Remove()`
+
+Permanently removes the GUI panel from the DOM.
+
+**Parameters:** None
+
+**Returns:** None
+
+**Example:**
+
+```javascript
+gui.Remove(); // Destroys the GUI completely
+```
+
+---
+
+### `GetControlById(id)`
+
+Retrieves a control element by its custom ID.
+
+**Parameters:**
+- `id` (String): The custom ID assigned to the control
+
+**Returns:** HTMLElement|null - The control element or null if not found
+
+**Example:**
+
+```javascript
+const button = gui.Button('Click', () => {}, '', 'myButton');
+const retrieved = gui.GetControlById('myButton');
+console.log(retrieved === button); // true
+```
+
+---
+
+### `GetControlValueById(id)`
+
+Retrieves the value of a control by its custom ID.
+
+**Parameters:**
+- `id` (String): The custom ID assigned to the control
+
+**Returns:** Any - The control's value (depends on control type) or null if not found
+
+**Example:**
+
+```javascript
+gui.Textbox('Name', '', '', 'nameInput');
+gui.GetControlValueById('nameInput'); // Returns the input value
+```
 
 ---
 
 ## Layout Methods
 
-### BeginSection(title, collapsible = false, collapsedByDefault = false, tooltip = '')
-Starts a new section block. Optionally collapsible.
+### `BeginSection(title, collapsible, collapsedByDefault, tooltip)`
 
-- Parameters:
-  - title: string
-  - collapsible: boolean
-  - collapsedByDefault: boolean
-  - tooltip: string
-- Behavior:
-  - Non-collapsible: renders header + section container
-  - Collapsible: renders header with indicator and an inner content container
-- Returns: this
-- Notes:
-  - When collapsible, controls are appended to section.contentContainer
-  - Click the header to toggle collapsed state
+Begins a new section container for grouping controls.
 
-### EndSection()
-Ends the current section.
+**Parameters:**
+- `title` (String): Section header text
+- `collapsible` (Boolean, optional): Enable collapse/expand (default: `false`)
+- `collapsedByDefault` (Boolean, optional): Start collapsed (default: `false`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
 
-- Returns: this
+**Returns:** ImmediateGUI instance (chainable)
 
-### BeginRow(gap = 2)
-Starts a new horizontal row layout.
+**Example:**
 
-- Parameters:
-  - gap: number (px)
-- Behavior:
-  - Children wrappers inside a row are flexed to fill width
-- Returns: this
-
-### EndRow()
-Ends the current row and normalizes child sizing.
-
-- Returns: this
-
-### BeginIndentation(level = -1)
-Increases indentation level or sets a custom level.
-
-- Parameters:
-  - level: number; -1 increments by one
-- Returns: this
-
-### EndIndentation()
-Decreases indentation level or resets custom level.
-
-- Returns: this
+```javascript
+gui.BeginSection('Settings', true, false, 'Application settings');
+    gui.Label('Volume');
+    gui.Slider(0, 100, 50);
+gui.EndSection();
+```
 
 ---
 
-## Tab Methods
+### `EndSection()`
 
-### BeginTabs(tabs = [], defaultTab = 0)
-Creates a tabbed container with headers and panes.
+Ends the current section. Supports nested sections.
 
-- Parameters:
-  - tabs: string[]
-  - defaultTab: number (index)
-- Behavior:
-  - Builds clickable headers
-  - Prepares panes; sets the active one
-  - Sets currentSection to first pane initially
-  - Tracks currentTabIndex separately for build-time targeting
-- Returns: this
+**Parameters:** None
 
-### SetActiveTab(tabIndexOrTabName)
-Sets the pane for subsequent control additions (build-time context).
+**Returns:** ImmediateGUI instance (chainable)
 
-- Parameters:
-  - tabIndexOrTabName: number | string
-- Behavior:
-  - If name provided, resolves index by pane.tabName
-  - Sets currentTab.currentTabIndex and currentSection
-- Returns: this
-- Errors:
-  - Logs error on invalid index/name
+**Example:**
 
-### EndTabs()
-Ends the current tabset context.
-
-- Returns: this
+```javascript
+gui.BeginSection('Outer Section');
+    gui.BeginSection('Inner Section');
+        gui.Label('Nested content');
+    gui.EndSection();
+gui.EndSection();
+```
 
 ---
 
-## Control Targeting
+### `BeginRow(gap)`
 
-### _getTargetContainer()
-Resolves the current DOM container for new controls.
+Begins a horizontal row layout for placing controls side-by-side.
 
-- Priority:
-  1. currentRow
-  2. currentTab.panes[currentTab.currentTabIndex]
-  3. currentSection.contentContainer (if collapsible)
-  4. currentSection
-  5. contentContainer
-- Returns: HTMLElement
+**Parameters:**
+- `gap` (Number, optional): Spacing between controls in pixels (default: `2`)
 
-### GetControlContainer()
-Gets the root panel element.
+**Returns:** ImmediateGUI instance (chainable)
 
-- Returns: HTMLElement
+**Example:**
 
-### GetControls(OfType = null)
-Returns all wrapper nodes added to the panel.
+```javascript
+gui.BeginRow(10);
+    gui.Button('Yes', () => {});
+    gui.Button('No', () => {});
+    gui.Button('Cancel', () => {});
+gui.EndRow();
+```
 
-- Parameters:
-  - OfType: string | null (reserved for future filtering)
-- Returns: NodeListOf<HTMLElement>
+---
+
+### `EndRow()`
+
+Ends the current row layout.
+
+**Parameters:** None
+
+**Returns:** ImmediateGUI instance (chainable)
+
+---
+
+### `BeginTabs(tabs, defaultTab)`
+
+Creates a tabbed interface with multiple panes.
+
+**Parameters:**
+- `tabs` (Array<String>): Array of tab names
+- `defaultTab` (Number, optional): Index of initially active tab (default: `0`)
+
+**Returns:** ImmediateGUI instance (chainable)
+
+**Example:**
+
+```javascript
+gui.BeginTabs(['General', 'Advanced', 'About'], 0);
+    gui.SetActiveTab(0);
+    gui.Label('General settings');
+
+    gui.SetActiveTab(1);
+    gui.Label('Advanced settings');
+
+    gui.SetActiveTab(2);
+    gui.Label('Version 1.0');
+gui.EndTabs();
+```
+
+---
+
+### `SetActiveTab(tabIndexOrTabName)`
+
+Switches to a specific tab for adding content.
+
+**Parameters:**
+- `tabIndexOrTabName` (Number|String): Tab index (0-based) or tab name
+
+**Returns:** ImmediateGUI instance (chainable)
+
+**Example:**
+
+```javascript
+gui.BeginTabs(['Tab1', 'Tab2']);
+    gui.SetActiveTab('Tab2');
+    gui.Label('This goes in Tab2');
+
+    gui.SetActiveTab(0);
+    gui.Label('This goes in Tab1');
+gui.EndTabs();
+```
+
+---
+
+### `EndTabs()`
+
+Ends the tabbed interface.
+
+**Parameters:** None
+
+**Returns:** ImmediateGUI instance (chainable)
+
+---
+
+### `BeginIndentation(level)`
+
+Increases indentation level for subsequent controls.
+
+**Parameters:**
+- `level` (Number, optional): Indentation level (default: `-1` for auto-increment)
+
+**Returns:** ImmediateGUI instance (chainable)
+
+**Example:**
+
+```javascript
+gui.Label('Level 0');
+gui.BeginIndentation();
+    gui.Label('Level 1');
+        gui.BeginIndentation();
+            gui.Label('Level 2');
+        gui.EndIndentation();
+gui.EndIndentation();
+```
+
+---
+
+### `EndIndentation()`
+
+Decreases indentation level.
+
+**Parameters:** None
+
+**Returns:** ImmediateGUI instance (chainable)
 
 ---
 
 ## Control Methods
 
-All control methods append to the current target container and return a primary element (or an API object), unless noted. Most methods apply indentation to the top-level wrapper.
+### `Label(text, id)`
 
-### Separator(plain = false)
-Horizontal rule separator.
+Creates a text label.
 
-- Parameters:
-  - plain: boolean (if false, draws border-top)
-- Returns: HTMLHRElement
+**Parameters:**
+- `text` (String): Label text
+- `id` (String, optional): Custom ID for querying (default: `null`)
 
-### Header(text, level = 1)
-Heading element (h1–h6).
+**Returns:** HTMLElement - The label element
 
-- Parameters:
-  - text: string
-  - level: number (1..6)
-- Returns: HTMLHeadingElement
+**Example:**
 
-### Button(text, callback, tooltip = '')
-Clickable button.
+```javascript
+const label = gui.Label('Status: Ready', 'statusLabel');
+label.textContent = 'Status: Running';
+```
 
-- Parameters:
-  - text: string
-  - callback: function (click handler)
-  - tooltip: string
-- Returns: HTMLButtonElement
-- Notes: Adds simple hover styling
+---
 
-### Textbox(placeholder, defaultValue = "", tooltip = '')
-Single-line text input.
+### `Header(text, level, id)`
 
-- Parameters:
-  - placeholder: string
-  - defaultValue: string
-  - tooltip: string
-- Returns: HTMLInputElement (type="text")
+Creates a header element (h1-h6).
 
-### TextArea(placeholder = "", defaultValue = "", rows = 4, tooltip = '')
-Multi-line text input.
+**Parameters:**
+- `text` (String): Header text
+- `level` (Number, optional): Header level 1-6 (default: `1`)
+- `id` (String, optional): Custom ID (default: `null`)
 
-- Parameters:
-  - placeholder: string
-  - defaultValue: string
-  - rows: number
-  - tooltip: string
-- Returns: HTMLTextAreaElement
-- Notes:
-  - Limits max height relative to panel
-  - Adjusts border on mouseenter
+**Returns:** HTMLElement - The header element
 
-### Label(text)
-Static label.
+**Example:**
 
-- Parameters:
-  - text: string
-- Returns: HTMLLabelElement
+```javascript
+gui.Header('Main Title', 1);
+gui.Header('Subtitle', 2);
+gui.Header('Section', 3);
+```
 
-### ProgressBar(value = 0, min = 0, max = 100, showText = true, tooltip = '')
-Progress bar with optional percentage text.
+---
 
-- Parameters:
-  - value: number
-  - min: number
-  - max: number
-  - showText: boolean
-  - tooltip: string
-- Returns: HTMLElement (bar element) augmented with:
-  - setValue(newValue)
-  - getValue()
-  - increment()
-  - decrement()
-  - textElement: HTMLElement | null
-  - min, max: numbers
-- Notes:
-  - Visually implemented with nested divs
+### `Button(text, callback, tooltip, id)`
 
-### ColorPicker(defaultValue = '#000000', tooltip = '')
-Color input paired with hex text.
+Creates a clickable button.
 
-- Parameters:
-  - defaultValue: string (#RRGGBB)
-  - tooltip: string
-- Returns: HTMLInputElement (type="color")
+**Parameters:**
+- `text` (String): Button text
+- `callback` (Function): Click event handler
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
 
-### DatePicker(defaultValue = today, tooltip = '')
-Date selector.
+**Returns:** HTMLElement - The button element
 
-- Parameters:
-  - defaultValue: string (YYYY-MM-DD)
-  - tooltip: string
-- Returns: HTMLInputElement (type="date")
+**Example:**
 
-### Dropdown(options = [], defaultValue = null, tooltip = '')
-Select dropdown.
+```javascript
+const btn = gui.Button('Submit', () => {
+    console.log('Form submitted');
+}, 'Click to submit', 'submitBtn');
 
-- Parameters:
-  - options: Array<string | { text|label, value }>
-  - defaultValue: string | number | null
-  - tooltip: string
-- Returns: HTMLSelectElement
+btn.disabled = false;
+```
 
-### NumberInput(label, defaultValue = 0, min = null, max = null, tooltip = '')
-Labeled numeric input.
+---
 
-- Parameters:
-  - label: string
-  - defaultValue: number
-  - min: number | null
-  - max: number | null
-  - tooltip: string
-- Returns: HTMLInputElement (type="number")
-- Notes:
-  - Keyup handler coerces values into [min, max] if provided
+### `Textbox(placeholder, defaultValue, tooltip, id)`
 
-### Slider(minValue = 0, maxValue = 100, defaultValue = 50, tooltip = '')
-Range slider with live value label.
+Creates a single-line text input.
 
-- Parameters:
-  - minValue: number
-  - maxValue: number
-  - defaultValue: number
-  - tooltip: string
-- Returns: HTMLInputElement (type="range")
-- Augments:
-  - slider.label: HTMLElement (value display)
+**Parameters:**
+- `placeholder` (String): Placeholder text
+- `defaultValue` (String, optional): Initial value (default: `''`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
 
-### Checkbox(label, checked = false, tooltip = '')
-Checkbox with label and theme accent.
+**Returns:** HTMLElement - The input element
 
-- Parameters:
-  - label: string
-  - checked: boolean
-  - tooltip: string
-- Returns: HTMLInputElement (type="checkbox")
-- Augments:
-  - checkbox.label: HTMLLabelElement
-- Notes:
-  - Uses accent-color and a clip-path for style
+**Example:**
 
-### ToggleSwitch(label, checked = false, tooltip = '', onChangeCallback = null)
-Custom toggle switch control.
+```javascript
+const input = gui.Textbox('Enter username', 'admin', '', 'usernameInput');
+console.log(input.value); // 'admin'
+```
 
-- Parameters:
-  - label: string
-  - checked: boolean
-  - tooltip: string
-  - onChangeCallback: function(checked: boolean)
-- Returns: HTMLInputElement (hidden checkbox)
-- Augments (on returned input):
-  - toggle(): void
-  - setChecked(value: boolean): void
-  - label: HTMLLabelElement
-  - track: HTMLElement
-  - thumb: HTMLElement
-- Accessibility:
-  - role="switch", tabindex=0, Space/Enter toggles
-  - aria-checked maintained
+---
 
-### RadioButtons(options = [], defaultValue = null, tooltip = '')
-Radio button group API.
+### `TextArea(placeholder, defaultValue, rows, tooltip, id)`
 
-- Parameters:
-  - options: Array<string | { text|label, value }>
-  - defaultValue: any
-  - tooltip: string
-- Returns: object API:
-  - getChecked(): value | null
-  - setChecked(value, checked): void
-- Notes:
-  - Creates unique group name per call
+Creates a multi-line text input area.
 
-### Image(src, alt = '', width = 'auto', height = 'auto', tooltip = '')
+**Parameters:**
+- `placeholder` (String, optional): Placeholder text (default: `''`)
+- `defaultValue` (String, optional): Initial value (default: `''`)
+- `rows` (Number, optional): Number of visible rows (default: `4`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The textarea element
+
+**Example:**
+
+```javascript
+const textarea = gui.TextArea('Enter description', '', 6, 'Describe your issue', 'descBox');
+textarea.value = 'New text content';
+```
+
+---
+
+### `NumberInput(label, defaultValue, min, max, tooltip, id)`
+
+Creates a labeled number input field.
+
+**Parameters:**
+- `label` (String): Label text
+- `defaultValue` (Number, optional): Initial value (default: `0`)
+- `min` (Number, optional): Minimum value (default: `null`)
+- `max` (Number, optional): Maximum value (default: `null`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The input element
+
+**Example:**
+
+```javascript
+const ageInput = gui.NumberInput('Age', 25, 0, 120, 'Enter your age', 'ageField');
+console.log(ageInput.value); // 25
+```
+
+---
+
+### `Slider(minValue, maxValue, defaultValue, tooltip, id)`
+
+Creates a range slider with value display.
+
+**Parameters:**
+- `minValue` (Number, optional): Minimum value (default: `0`)
+- `maxValue` (Number, optional): Maximum value (default: `100`)
+- `defaultValue` (Number, optional): Initial value (default: `50`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The slider input element (has `.label` property for value display)
+
+**Example:**
+
+```javascript
+const slider = gui.Slider(0, 100, 75, 'Adjust volume', 'volumeSlider');
+slider.addEventListener('input', () => {
+    console.log('Volume:', slider.value);
+});
+```
+
+---
+
+### `Checkbox(label, checked, tooltip, onChangeCallback, id)`
+
+Creates a checkbox with label.
+
+**Parameters:**
+- `label` (String): Label text
+- `checked` (Boolean, optional): Initial checked state (default: `false`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `onChangeCallback` (Function, optional): Change event handler (default: `null`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The checkbox input element (has `.label` property)
+
+**Example:**
+
+```javascript
+const checkbox = gui.Checkbox('Accept Terms', false, '', (checked) => {
+    console.log('Accepted:', checked);
+}, 'termsCheckbox');
+
+checkbox.checked = true;
+```
+
+---
+
+### `ToggleSwitch(label, checked, tooltip, onChangeCallback, id)`
+
+Creates an iOS-style toggle switch.
+
+**Parameters:**
+- `label` (String): Label text
+- `checked` (Boolean, optional): Initial checked state (default: `false`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `onChangeCallback` (Function, optional): Change event handler (default: `null`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The hidden input element with helper methods:
+  - `.toggle()` - Toggle the state
+  - `.setChecked(value)` - Set checked state
+  - `.label` - Reference to label element
+  - `.track` - Reference to track element
+  - `.thumb` - Reference to thumb element
+
+**Example:**
+
+```javascript
+const toggle = gui.ToggleSwitch('Dark Mode', true, '', (checked) => {
+    console.log('Dark mode:', checked);
+}, 'darkModeToggle');
+
+toggle.toggle(); // Toggles state
+toggle.setChecked(false); // Sets to unchecked
+```
+
+---
+
+### `RadioButtons(options, defaultValue, tooltip, id)`
+
+Creates a group of radio buttons.
+
+**Parameters:**
+- `options` (Array<String>, optional): Array of option labels (default: `[]`)
+- `defaultValue` (String, optional): Initially selected value (default: `null`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** Object - Radio group object with helper methods:
+  - `.getChecked()` - Returns the currently selected value
+  - `.setChecked(value, checked)` - Sets the checked state for a value
+  - `[optionValue]` - Direct access to individual radio elements
+
+**Example:**
+
+```javascript
+const radioGroup = gui.RadioButtons(['Option A', 'Option B', 'Option C'], 'Option A', '', 'optionsRadio');
+console.log(radioGroup.getChecked()); // 'Option A'
+radioGroup.setChecked('Option B', true);
+```
+
+---
+
+### `Dropdown(options, defaultValue, tooltip, id)`
+
+Creates a dropdown select element.
+
+**Parameters:**
+- `options` (Array<String|Object>, optional): Array of options (strings or `{text, value}` objects) (default: `[]`)
+- `defaultValue` (String, optional): Initially selected value (default: `null`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The select element
+
+**Example:**
+
+```javascript
+// Simple string options
+const dropdown1 = gui.Dropdown(['Red', 'Green', 'Blue'], 'Red', '', 'colorSelect');
+
+// Object options with custom values
+const dropdown2 = gui.Dropdown([
+    {text: 'Small', value: 's'},
+    {text: 'Medium', value: 'm'},
+    {text: 'Large', value: 'l'}
+], 'm', 'Select size', 'sizeSelect');
+
+console.log(dropdown2.value); // 'm'
+```
+
+---
+
+### `ProgressBar(value, min, max, showText, tooltip, id)`
+
+Creates a progress bar with optional text display.
+
+**Parameters:**
+- `value` (Number, optional): Initial value (default: `0`)
+- `min` (Number, optional): Minimum value (default: `0`)
+- `max` (Number, optional): Maximum value (default: `100`)
+- `showText` (Boolean, optional): Show percentage text (default: `true`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The progress bar element with methods:
+  - `.setValue(newValue)` - Update the progress value
+  - `.getValue()` - Get current value
+  - `.increment()` - Increase by step amount
+  - `.decrement()` - Decrease by step amount
+  - `.value` - Current value
+  - `.min` - Minimum value
+  - `.max` - Maximum value
+  - `.step` - Step increment (default: 1)
+
+**Example:**
+
+```javascript
+const progress = gui.ProgressBar(30, 0, 100, true, 'Download progress', 'downloadProgress');
+progress.setValue(50);
+progress.increment(); // Now 51
+progress.step = 10;
+progress.increment(); // Now 61
+```
+
+---
+
+### `ColorPicker(defaultValue, tooltip, id)`
+
+Creates a color picker input.
+
+**Parameters:**
+- `defaultValue` (String, optional): Initial color in hex format (default: `'#000000'`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The color input element
+
+**Example:**
+
+```javascript
+const colorPicker = gui.ColorPicker('#ff5733', 'Choose a color', 'bgColorPicker');
+colorPicker.addEventListener('input', () => {
+    console.log('Selected color:', colorPicker.value);
+});
+```
+
+---
+
+### `DatePicker(defaultValue, tooltip, id)`
+
+Creates a date picker input.
+
+**Parameters:**
+- `defaultValue` (String, optional): Initial date in YYYY-MM-DD format (default: current date)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
+
+**Returns:** HTMLElement - The date input element
+
+**Example:**
+
+```javascript
+const datePicker = gui.DatePicker('2025-12-31', 'Select a date', 'deadlinePicker');
+console.log(datePicker.value); // '2025-12-31'
+```
+
+---
+
+### `Image(src, alt, width, height, tooltip, id)`
+
 Displays an image.
 
-- Parameters:
-  - src: string
-  - alt: string
-  - width: string
-  - height: string
-  - tooltip: string
-- Returns: HTMLImageElement
+**Parameters:**
+- `src` (String): Image URL or data URI
+- `alt` (String, optional): Alternative text (default: `''`)
+- `width` (String, optional): Width in CSS units (default: `'auto'`)
+- `height` (String, optional): Height in CSS units (default: `'auto'`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `id` (String, optional): Custom ID (default: `null`)
 
-### ListBox(items = [], defaultSelected = null, tooltip = '', onChange = null, itemType = 'text')
-Scrollable list of items with selectable or interactive rows.
+**Returns:** HTMLElement - The img element
 
-- Parameters:
-  - items: any[] (strings or objects; depends on itemType)
-  - defaultSelected: number | any (index or value for text type)
-  - tooltip: string
-  - onChange: function
-    - text: (item, idx)
-    - checkbox: (item, idx, checked)
-    - custom: depends on implementer
-  - itemType: 'text' | 'checkbox' | function (custom renderer)
-- Behavior:
-  - text: highlights selected row on click
-  - checkbox: uses this.Checkbox() for consistent styling; label removed and a span label added; onChange fires with checked state
-  - custom: invokes function(item, idx) to produce a child node
-- Returns: HTMLUListElement, augmented with:
-  - getSelected(): { item, index } | null
-  - setSelected(idxOrItem): void
-- Notes:
-  - Hover/active styling matches theme
-  - For text type, defaultSelected supports index or item equality
+**Example:**
+
+```javascript
+const img = gui.Image('https://example.com/logo.png', 'Company Logo', '200px', 'auto', '', 'logoImage');
+img.src = 'https://example.com/new-logo.png'; // Update image
+```
 
 ---
 
-## Panel Lifecycle
+### `ListBox(items, defaultSelected, tooltip, onChange, itemType, id)`
 
-### Show()
-Appends the panel to document if not present and makes it visible.
+Creates a scrollable list of selectable items.
 
-- Behavior:
-  - Cleans up empty wrappers
-  - Warns if called mid-layout (indent/section/row)
-  - Removes bottom margin from last control wrapper
-- Returns: this
+**Parameters:**
+- `items` (Array<String|Object>, optional): Array of items (default: `[]`)
+- `defaultSelected` (String|Number, optional): Initially selected item (default: `null`)
+- `tooltip` (String, optional): Tooltip text (default: `''`)
+- `onChange` (Function, optional): Selection change handler (default: `null`)
+- `itemType` (String, optional): Item type - `'text'` or `'html'` (default: `'text'`)
+- `id` (String, optional): Custom ID (default: `null`)
 
-### Remove()
-Removes the panel from the DOM.
+**Returns:** HTMLElement - The listbox (ul) element with methods:
+  - `.getSelected()` - Returns selected item index or -1
+  - `.setSelected(idxOrItem)` - Selects item by index or value
 
-- Returns: void
+**Example:**
 
-### Hide()
-Hides the panel (display: none).
+```javascript
+const listBox = gui.ListBox(
+    ['Apple', 'Banana', 'Cherry', 'Date'],
+    0,
+    'Select a fruit',
+    (item, idx) => console.log('Selected:', item, 'at index', idx),
+    'text',
+    'fruitList'
+);
 
-- Returns: this
-
----
-
-## Modal/Prompt
-
-### ShowModal(message, title = '', options = {})
-Displays a modal dialog overlay.
-
-- Parameters:
-  - message: string | Node
-  - title: string
-  - options:
-    - type: 'info' | 'warning' | 'error' | 'success' (default 'info')
-    - buttons: string[] | { text, primary?, callback? }[]
-    - closeOnBackdropClick: boolean (default true)
-    - width: number (default 400)
-- Returns: { close: Function, element: HTMLElement, backdrop: HTMLElement }
-- Behavior:
-  - Fades in backdrop and modal
-  - Esc closes the modal
-  - Button clicks invoke callbacks and close
-
-### ShowPrompt(message, title, defaultValue = '', options = {})
-Simple prompt placeholder.
-
-- Parameters:
-  - message: string
-  - title: string (unused in fallback)
-  - defaultValue: string
-  - options: object (unused)
-- Returns: string | null
-- Notes:
-  - Currently falls back to window.prompt with a console warning
+listBox.setSelected(2); // Selects 'Cherry'
+console.log(listBox.getSelected()); // 2
+```
 
 ---
 
-## Theming
+### `Separator(plain, id)`
 
-### SetTheme(themeName)
-Switches active theme and updates all controls in-place.
+Creates a horizontal separator line.
 
-- Parameters:
-  - themeName: 'light' | 'dark'
-- Returns: this
-- Side Effects:
-  - Updates CSS variables and restyles existing elements
+**Parameters:**
+- `plain` (Boolean, optional): Create invisible spacer (default: `false`)
+- `id` (String, optional): Custom ID (default: `null`)
 
-### _updateCSSVariables()
-Sets CSS custom properties on :root for current theme colors.
+**Returns:** HTMLElement - The separator (hr) element
 
-- Returns: void
+**Example:**
 
-### _applyThemeToElements()
-Restyles DOM nodes under the container to match active theme.
-
-- Returns: this
+```javascript
+gui.Label('Section 1');
+gui.Separator(); // Stylized spacer
+gui.Label('Section 2');
+gui.Separator(true); // Invisible spacer
+gui.Label('Section 3');
+```
 
 ---
 
-## Notes and Conventions
+## Theme Methods
 
-- All control builders append to the current build context determined by:
-  - Row > Current Tab Pane (by build index) > Section (or its content) > Panel Content
-- Most methods return the created input/control for further wiring.
-- Wrapper divs use class .imgui-wrapper and controls use .imgui-control.
-- IDs are unique per control for label-association and querying.
-- Dragging is initiated by clicking on the container outside typical inputs.
+### `SetTheme(themeName)`
+
+Changes the GUI theme.
+
+**Parameters:**
+- `themeName` (String): Theme name - `'light'` or `'dark'`
+
+**Returns:** ImmediateGUI instance (chainable)
+
+**Example:**
+
+```javascript
+gui.SetTheme('dark');
+// Switches to dark theme
+
+gui.SetTheme('light');
+// Switches to light theme
+```
+
+---
+
+## Utility Methods
+
+### `ShowModal(message, title, options)`
+
+Displays a modal dialog box.
+
+**Parameters:**
+- `message` (String|HTMLElement): Message content
+- `title` (String, optional): Modal title (default: `''`)
+- `options` (Object, optional): Configuration object:
+  - `title` (String): Override title
+  - `type` (String): Modal type - `'info'`, `'warning'`, `'error'`, `'success'` (default: `'info'`)
+  - `buttons` (Array<String|Object>): Button configurations (default: `['OK']`)
+  - `closeOnBackdropClick` (Boolean): Close when clicking outside (default: `true`)
+  - `width` (Number): Modal width in pixels (default: `400`)
+
+**Returns:** Object with methods:
+  - `.close()` - Close the modal
+  - `.element` - Reference to modal element
+  - `.backdrop` - Reference to backdrop element
+
+**Example:**
+
+```javascript
+// Simple alert
+const modal1 = gui.ShowModal('Operation completed successfully!', 'Success', {
+    type: 'success'
+});
+
+// Confirmation dialog
+const modal2 = gui.ShowModal('Are you sure you want to delete this?', 'Confirm', {
+    type: 'warning',
+    buttons: [
+        {
+            text: 'Delete',
+            onClick: () => {
+                console.log('Deleted');
+                modal2.close();
+            }
+        },
+        {
+            text: 'Cancel',
+            onClick: () => modal2.close()
+        }
+    ]
+});
+```
+
+---
+
+### `ShowPrompt(message, title, defaultValue, options)`
+
+Displays a prompt dialog (currently falls back to native prompt).
+
+**Parameters:**
+- `message` (String): Prompt message
+- `title` (String): Prompt title
+- `defaultValue` (String, optional): Default input value (default: `''`)
+- `options` (Object, optional): Configuration options (currently unused)
+
+**Returns:** String|null - User input or null if cancelled
+
+**Example:**
+
+```javascript
+const name = gui.ShowPrompt('Enter your name', 'User Input', 'John Doe');
+console.log('Name entered:', name);
+```
+
+---
+
+## Examples
+
+### Example 1: Basic Form
+
+```javascript
+const gui = new ImmediateGUI({
+    title: 'User Registration',
+    theme: 'dark',
+    width: 350
+});
+
+gui.Header('Create Account', 2);
+gui.Separator();
+gui.Textbox('Username', '', 'Enter your username', 'username');
+gui.Textbox('Email', '', 'Enter your email', 'email');
+gui.NumberInput('Age', 18, 13, 120, 'Your age', 'age');
+gui.Separator();
+gui.Checkbox('Subscribe to newsletter', false, '', null, 'subscribe');
+gui.BeginRow(10);
+gui.Button('Register', () => {
+    const data = {
+        username: gui.GetControlValueById('username'),
+        email: gui.GetControlValueById('email'),
+        age: gui.GetControlValueById('age'),
+        subscribe: gui.GetControlValueById('subscribe')
+    };
+    console.log('Registration data:', data);
+});
+gui.Button('Cancel', () => gui.Hide());
+gui.EndRow();
+gui.Show();
+```
+
+### Example 2: Settings Panel with Tabs
+
+```javascript
+const gui = new ImmediateGUI({
+    title: 'Application Settings',
+    theme: 'dark'
+});
+
+gui.BeginTabs(['General', 'Display', 'Audio'], 0);
+
+// General Tab
+gui.SetActiveTab(0);
+gui.Label('General Settings');
+gui.Textbox('Application Name', 'MyApp');
+gui.Checkbox('Auto-save', true);
+gui.Checkbox('Show notifications', true);
+
+// Display Tab
+gui.SetActiveTab(1);
+gui.Label('Display Settings');
+gui.ToggleSwitch('Dark Mode', true);
+gui.Dropdown(['Small', 'Medium', 'Large'], 'Medium');
+gui.ColorPicker('#3498db', 'Theme color');
+
+// Audio Tab
+gui.SetActiveTab(2);
+gui.Label('Audio Settings');
+gui.Slider(0, 100, 75, 'Master volume');
+gui.Slider(0, 100, 50, 'Music volume');
+gui.Slider(0, 100, 60, 'Effects volume');
+
+gui.EndTabs();
+gui.Show();
+```
+
+### Example 3: Collapsible Sections
+
+```javascript
+const gui = new ImmediateGUI({
+    title: 'Advanced Controls',
+    width: 400
+});
+
+gui.BeginSection('Player Stats', true, false);
+gui.Label('Health: 100');
+gui.ProgressBar(100, 0, 100, true);
+gui.Label('Mana: 75');
+gui.ProgressBar(75, 0, 100, true);
+gui.EndSection();
+
+gui.BeginSection('Inventory', true, false);
+gui.ListBox(['Sword', 'Shield', 'Potion x5', 'Gold: 250'], 0);
+gui.BeginRow();
+gui.Button('Use', () => {});
+gui.Button('Drop', () => {});
+gui.EndRow();
+gui.EndSection();
+
+gui.BeginSection('Options', true, true); // Collapsed by default
+gui.ToggleSwitch('Show FPS', false);
+gui.ToggleSwitch('Enable sound', true);
+gui.Dropdown(['Low', 'Medium', 'High', 'Ultra'], 'High');
+gui.EndSection();
+
+gui.Show();
+```
+
+### Example 4: Progress Tracking
+
+```javascript
+const gui = new ImmediateGUI({
+    title: 'Download Manager'
+});
+
+gui.Header('Downloading Files...', 3);
+gui.ProgressBar(0, 0, 100, true, '', 'downloadProgress');
+gui.Label('Status: Initializing...', 'statusLabel');
+gui.Show();
+
+// Simulate download
+let current = 0;
+const interval = setInterval(() => {
+    current += 5;
+    const progressBar = gui.GetControlById('downloadProgress');
+    const statusLabel = gui.GetControlById('statusLabel');
+    
+    progressBar.setValue(current);
+    statusLabel.textContent = `Status: ${current}% complete`;
+    
+    if (current >= 100) {
+        clearInterval(interval);
+        statusLabel.textContent = 'Status: Complete!';
+    }
+}, 200);
+```
+
+### Example 5: Modal Dialogs
+
+```javascript
+const gui = new ImmediateGUI({
+    title: 'Modal Examples'
+});
+
+gui.Button('Show Info', () => {
+    gui.ShowModal('This is an informational message.', 'Information', {
+        type: 'info'
+    });
+});
+
+gui.Button('Show Warning', () => {
+    gui.ShowModal('This action cannot be undone!', 'Warning', {
+        type: 'warning',
+        buttons: [
+            {
+                text: 'Proceed',
+                onClick: (modal) => {
+                    console.log('User proceeded');
+                    modal.close();
+                }
+            },
+            {
+                text: 'Cancel',
+                onClick: (modal) => modal.close()
+            }
+        ]
+    });
+});
+
+gui.Button('Show Error', () => {
+    gui.ShowModal('An error occurred while processing your request.', 'Error', {
+        type: 'error'
+    });
+});
+
+gui.Show();
+```
+
+### Example 6: Dynamic Content
+
+```javascript
+const gui = new ImmediateGUI({
+    title: 'Task Manager'
+});
+
+let tasks = [];
+
+gui.Header('Add New Task', 4);
+gui.Textbox('Task description', '', '', 'taskInput');
+gui.Button('Add Task', () => {
+    const input = gui.GetControlById('taskInput');
+    if (input.value.trim()) {
+        tasks.push(input.value);
+        input.value = '';
+        updateTaskList();
+    }
+});
+gui.Separator();
+gui.Label('Tasks:', 'taskListLabel');
+gui.Show();
+
+function updateTaskList() {
+    const label = gui.GetControlById('taskListLabel');
+    label.textContent = 'Tasks: ' + (tasks.length > 0 ? tasks.join(', ') : 'None');
+}
+```
+
+### Example 7: Nested Layouts
+
+```javascript
+const gui = new ImmediateGUI({
+    title: 'Complex Layout',
+    width: 450
+});
+
+gui.BeginSection('User Profile');
+gui.BeginRow();
+gui.Image('https://via.placeholder.com/80', 'Avatar', '80px', '80px');
+gui.Label('John Doe');
+gui.EndRow();
+
+gui.BeginIndentation();
+gui.Label('Email: john@example.com');
+gui.Label('Member since: 2025');
+gui.EndIndentation();
+
+gui.BeginSection('Preferences', true);
+gui.RadioButtons(['Email', 'SMS', 'Push'], 'Email');
+gui.EndSection();
+
+gui.EndSection();
+
+gui.Separator();
+
+gui.BeginRow(15);
+gui.Button('Save', () => console.log('Saved'));
+gui.Button('Cancel', () => gui.Hide());
+gui.EndRow();
+
+gui.Show();
+```
+
+---
+
+## Browser Compatibility
+
+ImmediateGUI uses modern JavaScript and CSS features. It is compatible with:
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+
+---
+
+## Tips and Best Practices
+
+1. **Always call `gui.Show()`** to display your GUI after adding controls
+2. **Use custom IDs** when you need to query or update controls later
+3. **Layout methods are chainable** - `BeginSection()`, `EndSection()`, `BeginRow()`, etc. return the GUI instance
+4. **Control methods return the control element** - Use `GetControlById()` to access controls later
+5. **Use sections and tabs** to organize complex interfaces
+6. **Leverage the control registry** with `GetControlById()` for dynamic updates
+7. **Remember to call `EndSection()`, `EndRow()`, and `EndTabs()`** to properly close layouts
+8. **Use tooltips** to provide additional context without cluttering the interface
+
+---
+
+## Troubleshooting
+
+**Q: Controls aren't appearing**
+- A: Make sure you called `.Show()` at the end of your chain
+
+**Q: Layout looks broken**
+- A: Check that all `Begin*` methods have corresponding `End*` methods
+
+**Q: Can't access control after creation**
+- A: Control methods return the control element itself. Store the return value or assign a custom ID and use `GetControlById()`
+
+**Q: Theme not updating**
+- A: Call `SetTheme()` after creating controls, or recreate the GUI with the new theme
+
+**Q: Modal not showing**
+- A: Ensure the GUI container is in the DOM (call `.Show()` first)
 
 ---
