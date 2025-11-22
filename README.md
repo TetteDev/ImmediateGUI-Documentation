@@ -4,18 +4,17 @@ Download Link: https://greasyfork.org/en/scripts/535798-immediategui
 
 ## Overview
 
-**ImmediateGUI** is a lightweight, feature-rich JavaScript library for creating immediate-mode GUI interfaces in web applications. It provides a simple, chainable API for building customizable user interfaces with minimal setup.
+**ImmediateGUI** is a lightweight, feature-rich JavaScript library for creating immediate-mode GUI interfaces in web applications. It provides a simple API for building customizable user interfaces with minimal setup.
 
 ### Key Features
 
-- **🎨 Theming System**: Built-in light and dark themes with custom theme support
+- **🎨 Theming System**: Built-in light and dark themes
 - **📦 Immediate Mode Rendering**: Build UIs with a simple, declarative API
 - **🔧 Extensive Control Set**: 20+ UI controls including buttons, inputs, sliders, and more
 - **📑 Advanced Layouts**: Support for sections, rows, tabs, and indentation
 - **🎯 Draggable Interface**: Optional draggable panels with auto-positioning
 - **🔍 Control Registry**: Query and manipulate controls by ID
 - **📱 Responsive Design**: Auto-scrolling with customizable max height
-- **♿ Accessibility**: ARIA attributes and keyboard navigation support
 - **🎭 Modal Dialogs**: Built-in modal and prompt systems
 - **⚡ Performance**: Efficient rendering with CSS variables and minimal DOM operations
 
@@ -25,13 +24,12 @@ Download Link: https://greasyfork.org/en/scripts/535798-immediategui
 
 1. [Getting Started](#getting-started)
 2. [Constructor](#constructor)
-3. [Static Methods](#static-methods)
-4. [Core Methods](#core-methods)
-5. [Layout Methods](#layout-methods)
-6. [Control Methods](#control-methods)
-7. [Theme Methods](#theme-methods)
-8. [Utility Methods](#utility-methods)
-9. [Examples](#examples)
+3. [Core Methods](#core-methods)
+4. [Layout Methods](#layout-methods)
+5. [Control Methods](#control-methods)
+6. [Theme Methods](#theme-methods)
+7. [Utility Methods](#utility-methods)
+8. [Examples](#examples)
 
 ---
 
@@ -85,26 +83,6 @@ const gui = new ImmediateGUI({
     draggable: true,
     titleLeftAligned: false
 });
-```
-
----
-
-## Static Methods
-
-### `ImmediateGUI.GenerateId(prefix)`
-
-Generates a unique ID for GUI elements.
-
-**Parameters:**
-- `prefix` (String, optional): ID prefix (default: `'gui_'`)
-
-**Returns:** String - Unique ID
-
-**Example:**
-
-```javascript
-const uniqueId = ImmediateGUI.GenerateId('custom_');
-// Returns: 'custom_lz9x8k7p2qm'
 ```
 
 ---
@@ -925,29 +903,28 @@ const gui = new ImmediateGUI({
 });
 
 gui.BeginTabs(['General', 'Display', 'Audio'], 0);
+    // General Tab
+    gui.SetActiveTab(0);
+        gui.Label('General Settings');
+        gui.Textbox('Application Name', 'MyApp');
+        gui.Checkbox('Auto-save', true);
+        gui.Checkbox('Show notifications', true);
 
-// General Tab
-gui.SetActiveTab(0);
-gui.Label('General Settings');
-gui.Textbox('Application Name', 'MyApp');
-gui.Checkbox('Auto-save', true);
-gui.Checkbox('Show notifications', true);
+    // Display Tab
+    gui.SetActiveTab(1);
+        gui.Label('Display Settings');
+        gui.ToggleSwitch('Dark Mode', true);
+        gui.Dropdown(['Small', 'Medium', 'Large'], 'Medium');
+        gui.ColorPicker('#3498db', 'Theme color');
 
-// Display Tab
-gui.SetActiveTab(1);
-gui.Label('Display Settings');
-gui.ToggleSwitch('Dark Mode', true);
-gui.Dropdown(['Small', 'Medium', 'Large'], 'Medium');
-gui.ColorPicker('#3498db', 'Theme color');
-
-// Audio Tab
-gui.SetActiveTab(2);
-gui.Label('Audio Settings');
-gui.Slider(0, 100, 75, 'Master volume');
-gui.Slider(0, 100, 50, 'Music volume');
-gui.Slider(0, 100, 60, 'Effects volume');
-
+    // Audio Tab
+    gui.SetActiveTab(2);
+        gui.Label('Audio Settings');
+        gui.Slider(0, 100, 75, 'Master volume');
+        gui.Slider(0, 100, 50, 'Music volume');
+        gui.Slider(0, 100, 60, 'Effects volume');
 gui.EndTabs();
+
 gui.Show();
 ```
 
@@ -960,24 +937,24 @@ const gui = new ImmediateGUI({
 });
 
 gui.BeginSection('Player Stats', true, false);
-gui.Label('Health: 100');
-gui.ProgressBar(100, 0, 100, true);
-gui.Label('Mana: 75');
-gui.ProgressBar(75, 0, 100, true);
+    gui.Label('Health: 100');
+    gui.ProgressBar(100, 0, 100, true);
+    gui.Label('Mana: 75');
+    gui.ProgressBar(75, 0, 100, true);
 gui.EndSection();
 
 gui.BeginSection('Inventory', true, false);
-gui.ListBox(['Sword', 'Shield', 'Potion x5', 'Gold: 250'], 0);
-gui.BeginRow();
-gui.Button('Use', () => {});
-gui.Button('Drop', () => {});
-gui.EndRow();
+    gui.ListBox(['Sword', 'Shield', 'Potion x5', 'Gold: 250'], 0);
+    gui.BeginRow();
+        gui.Button('Use', () => {});
+        gui.Button('Drop', () => {});
+    gui.EndRow();
 gui.EndSection();
 
 gui.BeginSection('Options', true, true); // Collapsed by default
-gui.ToggleSwitch('Show FPS', false);
-gui.ToggleSwitch('Enable sound', true);
-gui.Dropdown(['Low', 'Medium', 'High', 'Ultra'], 'High');
+    gui.ToggleSwitch('Show FPS', false);
+    gui.ToggleSwitch('Enable sound', true);
+    gui.Dropdown(['Low', 'Medium', 'High', 'Ultra'], 'High');
 gui.EndSection();
 
 gui.Show();
@@ -1091,27 +1068,26 @@ const gui = new ImmediateGUI({
 });
 
 gui.BeginSection('User Profile');
-gui.BeginRow();
-gui.Image('https://via.placeholder.com/80', 'Avatar', '80px', '80px');
-gui.Label('John Doe');
-gui.EndRow();
+    gui.BeginRow();
+        gui.Image('https://via.placeholder.com/80', 'Avatar', '80px', '80px');
+        gui.Label('John Doe');
+    gui.EndRow();
 
-gui.BeginIndentation();
-gui.Label('Email: john@example.com');
-gui.Label('Member since: 2025');
-gui.EndIndentation();
+    gui.BeginIndentation();
+        gui.Label('Email: john@example.com');
+        gui.Label('Member since: 2025');
+    gui.EndIndentation();
 
-gui.BeginSection('Preferences', true);
-gui.RadioButtons(['Email', 'SMS', 'Push'], 'Email');
-gui.EndSection();
-
+    gui.BeginSection('Preferences', true);
+        gui.RadioButtons(['Email', 'SMS', 'Push'], 'Email');
+    gui.EndSection();
 gui.EndSection();
 
 gui.Separator();
 
 gui.BeginRow(15);
-gui.Button('Save', () => console.log('Saved'));
-gui.Button('Cancel', () => gui.Hide());
+    gui.Button('Save', () => console.log('Saved'));
+    gui.Button('Cancel', () => gui.Hide());
 gui.EndRow();
 
 gui.Show();
