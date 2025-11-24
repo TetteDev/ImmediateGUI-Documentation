@@ -893,6 +893,7 @@ gui.Button('Cancel', () => gui.Hide());
 gui.EndRow();
 gui.Show();
 ```
+![Markdown Logo](https://raw.githubusercontent.com/TetteDev/ImmediateGUI-Documentation/refs/heads/main/ex-basicform.png)
 
 ### Example 2: Settings Panel with Tabs
 
@@ -928,6 +929,8 @@ gui.EndTabs();
 gui.Show();
 ```
 
+![Markdown Logo](https://raw.githubusercontent.com/TetteDev/ImmediateGUI-Documentation/refs/heads/main/ex-settings-panel.gif)
+
 ### Example 3: Collapsible Sections
 
 ```javascript
@@ -960,6 +963,8 @@ gui.EndSection();
 gui.Show();
 ```
 
+![Markdown Logo](https://raw.githubusercontent.com/TetteDev/ImmediateGUI-Documentation/refs/heads/main/ex-collapsible-sections.gif)
+
 ### Example 4: Progress Tracking
 
 ```javascript
@@ -988,6 +993,8 @@ const interval = setInterval(() => {
     }
 }, 200);
 ```
+
+![Markdown Logo](https://raw.githubusercontent.com/TetteDev/ImmediateGUI-Documentation/refs/heads/main/ex-progress-tracking.gif)
 
 ### Example 5: Modal Dialogs
 
@@ -1029,6 +1036,8 @@ gui.Button('Show Error', () => {
 
 gui.Show();
 ```
+
+![Markdown Logo](https://raw.githubusercontent.com/TetteDev/ImmediateGUI-Documentation/refs/heads/main/ex-modals.gif)
 
 ### Example 6: Dynamic Content
 
